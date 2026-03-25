@@ -2,793 +2,294 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Baymax Health - Monitor de Signos Vitales</title>
-    
-    <!-- Chart.js para gráficas -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baymax Health</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
         }
-        
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-        
-        .header {
-            text-align: center;
-            color: white;
-            margin-bottom: 30px;
-            animation: fadeInDown 0.8s ease;
-        }
-        
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        
-        .header p {
-            font-size: 1.1em;
-            opacity: 0.9;
-        }
-        
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { text-align: center; color: white; margin-bottom: 30px; }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
         .dashboard {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
-        
         .card {
             background: white;
             border-radius: 20px;
             padding: 25px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            transition: transform 0.3s, box-shadow 0.3s;
-            animation: fadeInUp 0.6s ease;
-        }
-        
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.25);
-        }
-        
-        .card h3 {
-            color: #333;
-            margin-bottom: 15px;
-            font-size: 1.2em;
-            border-left: 4px solid #667eea;
-            padding-left: 12px;
-        }
-        
-        .valor-grande {
-            font-size: 3.5em;
-            font-weight: bold;
             text-align: center;
-            margin: 20px 0;
         }
-        
+        .card h3 { color: #333; margin-bottom: 15px; }
+        .valor-grande { font-size: 3.5em; font-weight: bold; margin: 20px 0; }
         .spO2 { color: #4CAF50; }
         .temp { color: #FF9800; }
         .fc { color: #F44336; }
-        
-        .unidad {
-            font-size: 0.4em;
-            color: #666;
-        }
-        
         .estado {
-            text-align: center;
-            padding: 12px;
+            padding: 10px;
             border-radius: 50px;
             font-weight: bold;
             margin-top: 10px;
         }
-        
-        .normal { background: linear-gradient(135deg, #4CAF50, #45a049); color: white; }
-        .atencion { background: linear-gradient(135deg, #FF9800, #f57c00); color: white; }
-        .alerta { background: linear-gradient(135deg, #F44336, #d32f2f); color: white; animation: pulse 1s infinite; }
-        
+        .normal { background: #4CAF50; color: white; }
+        .atencion { background: #FF9800; color: white; }
+        .alerta { background: #F44336; color: white; }
         .grafica-container {
             background: white;
             border-radius: 20px;
-            padding: 25px;
-            margin-bottom: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            animation: fadeInUp 0.6s ease;
-        }
-        
-        .grafica-container h3 {
-            color: #333;
+            padding: 20px;
             margin-bottom: 20px;
-            font-size: 1.3em;
-            border-left: 4px solid #667eea;
-            padding-left: 12px;
         }
-        
-        canvas {
-            max-height: 300px;
-        }
-        
+        .grafica-container h3 { margin-bottom: 15px; color: #333; }
         .historial {
             background: white;
             border-radius: 20px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 20px;
             overflow-x: auto;
-            animation: fadeInUp 0.6s ease;
         }
-        
-        .historial h3 {
-            color: #333;
-            margin-bottom: 20px;
-            font-size: 1.3em;
-            border-left: 4px solid #667eea;
-            padding-left: 12px;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        
-        th {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            font-weight: bold;
-        }
-        
-        tr:hover {
-            background: #f5f5f5;
-        }
-        
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #667eea; color: white; }
         .loading {
             text-align: center;
             padding: 50px;
             color: white;
         }
-        
         .spinner {
             border: 4px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
             border-top: 4px solid white;
+            border-radius: 50%;
             width: 50px;
             height: 50px;
             animation: spin 1s linear infinite;
             margin: 20px auto;
         }
-        
-        .info-dispositivos {
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .selector {
             background: rgba(255,255,255,0.2);
+            padding: 15px;
             border-radius: 15px;
-            padding: 15px 20px;
             margin-bottom: 20px;
             color: white;
-            backdrop-filter: blur(10px);
             display: flex;
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
             gap: 10px;
         }
-        
-        .selector-dispositivo {
-            background: white;
-            color: #333;
+        select, button {
             padding: 10px 15px;
             border-radius: 10px;
             border: none;
             font-size: 1em;
-            cursor: pointer;
-            font-weight: bold;
         }
-        
-        .badge {
-            display: inline-block;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.85em;
-            font-weight: bold;
-        }
-        
-        .badge-online {
-            background: #4CAF50;
-            color: white;
-        }
-        
-        .actualizando {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.8em;
-            animation: pulse 1s infinite;
-            z-index: 1000;
-        }
-        
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-        
-        @media (max-width: 768px) {
-            body { padding: 10px; }
-            .header h1 { font-size: 1.8em; }
-            .valor-grande { font-size: 2.5em; }
-            .card { padding: 15px; }
-            th, td { padding: 8px; font-size: 0.85em; }
-            .info-dispositivos { flex-direction: column; text-align: center; }
-        }
-        
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: #667eea;
-            border-radius: 10px;
-        }
-        
-        .refrescar-btn {
+        button {
             background: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 20px;
+            color: #667eea;
             cursor: pointer;
             font-weight: bold;
-            color: #667eea;
-            transition: transform 0.2s;
         }
-        
-        .refrescar-btn:hover {
-            transform: scale(1.05);
-        }
-        
-        .sin-datos {
-            text-align: center;
-            padding: 40px;
-            color: #999;
+        @media (max-width: 768px) {
+            .valor-grande { font-size: 2.5em; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>
-                🤖 Baymax Health Monitor
-                <span style="font-size: 0.5em;">v1.0</span>
-            </h1>
-            <p>Monitoreo de signos vitales en tiempo real | Tu salud, nuestra prioridad</p>
+            <h1>🤖 Baymax Health</h1>
+            <p>Monitoreo de signos vitales</p>
         </div>
         
         <div id="loading" class="loading">
             <div class="spinner"></div>
-            <p>🔄 Conectando con Baymax...</p>
-            <p style="font-size: 0.9em; margin-top: 10px;">Cargando datos desde Firebase</p>
+            <p>Cargando datos...</p>
         </div>
         
         <div id="dashboard" style="display: none;">
-            <div class="info-dispositivos">
-                <span>📱 <strong>Dispositivo conectado:</strong></span>
-                <select id="selector-dispositivo" class="selector-dispositivo">
-                    <option value="">Cargando dispositivos...</option>
+            <div class="selector">
+                <span>📱 Dispositivo:</span>
+                <select id="selector-dispositivo">
+                    <option>Cargando...</option>
                 </select>
-                <span id="estado-conexion" class="badge badge-online">🟢 Online</span>
-                <button id="btn-refrescar" class="refrescar-btn">🔄 Actualizar</button>
+                <button id="btn-refrescar">🔄 Actualizar</button>
             </div>
             
             <div class="dashboard">
                 <div class="card">
-                    <h3>🫁 SpO2 (Oxígeno en sangre)</h3>
-                    <div class="valor-grande spO2">
-                        <span id="ultimo-spo2">--</span>
-                        <span class="unidad">%</span>
-                    </div>
+                    <h3>🫁 SpO2</h3>
+                    <div class="valor-grande spO2"><span id="spo2">--</span><span style="font-size:0.4em;">%</span></div>
                     <div id="estado-spo2" class="estado">--</div>
                 </div>
-                
                 <div class="card">
-                    <h3>🌡️ Temperatura Corporal</h3>
-                    <div class="valor-grande temp">
-                        <span id="ultimo-temp">--</span>
-                        <span class="unidad">°C</span>
-                    </div>
+                    <h3>🌡️ Temperatura</h3>
+                    <div class="valor-grande temp"><span id="temp">--</span><span style="font-size:0.4em;">°C</span></div>
                     <div id="estado-temp" class="estado">--</div>
                 </div>
-                
                 <div class="card">
-                    <h3>❤️ Frecuencia Cardíaca</h3>
-                    <div class="valor-grande fc">
-                        <span id="ultimo-fc">--</span>
-                        <span class="unidad">BPM</span>
-                    </div>
+                    <h3>❤️ FC</h3>
+                    <div class="valor-grande fc"><span id="fc">--</span><span style="font-size:0.4em;">BPM</span></div>
                     <div id="estado-fc" class="estado">--</div>
                 </div>
             </div>
             
             <div class="grafica-container">
-                <h3>📈 Tendencia de SpO2 (últimas 20 mediciones)</h3>
+                <h3>📈 SpO2</h3>
                 <canvas id="grafica-spo2"></canvas>
             </div>
             
             <div class="grafica-container">
-                <h3>📈 Tendencia de Temperatura (últimas 20 mediciones)</h3>
+                <h3>📈 Temperatura</h3>
                 <canvas id="grafica-temp"></canvas>
             </div>
             
-            <div class="grafica-container">
-                <h3>📈 Tendencia de Frecuencia Cardíaca (últimas 20 mediciones)</h3>
-                <canvas id="grafica-fc"></canvas>
-            </div>
-            
             <div class="historial">
-                <h3>📋 Historial de Mediciones</h3>
-                <div style="overflow-x: auto;">
-                    <table id="tabla-historial">
-                        <thead>
-                            <tr>
-                                <th>🕐 Fecha/Hora</th>
-                                <th>🫁 SpO2 (%)</th>
-                                <th>🌡️ Temperatura (°C)</th>
-                                <th>❤️ FC (BPM)</th>
-                                <th>🚨 Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody id="historial-body">
-                            <tr>
-                                <td colspan="5" style="text-align: center;">📭 Esperando primera medición...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <h3>📋 Historial</h3>
+                <table>
+                    <thead>
+                        <tr><th>Fecha y Hora</th><th>SpO2</th><th>Temp</th><th>FC</th><th>Estado</th></tr>
+                    </thead>
+                    <tbody id="historial-body"></tbody>
+                </table>
             </div>
-        </div>
-        
-        <div id="actualizando-texto" class="actualizando" style="display: none;">
-            🔄 Actualizando datos...
         </div>
     </div>
 
     <script type="module">
-        // Importar Firebase (solo lo necesario)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
         import { getDatabase, ref, onValue, query, orderByKey, limitToLast, get } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
         
-        // Tu configuración de Firebase
-        const firebaseConfig = {
+        const config = {
             apiKey: "AIzaSyCGb80jG5eF4bqr5YPAKMd2XEYrjhR9d5E",
             authDomain: "baymaxhealth.firebaseapp.com",
             databaseURL: "https://baymaxhealth-default-rtdb.firebaseio.com",
             projectId: "baymaxhealth",
             storageBucket: "baymaxhealth.firebasestorage.app",
             messagingSenderId: "785237598845",
-            appId: "1:785237598845:web:9e986214441e6069a0c714",
-            measurementId: "G-7KYCM5XFW1"
+            appId: "1:785237598845:web:9e986214441e6069a0c714"
         };
         
-        // Inicializar Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
+        const app = initializeApp(config);
+        const db = getDatabase(app);
         
-        console.log("✅ Firebase inicializado correctamente");
-        console.log("📡 Conectado a:", firebaseConfig.databaseURL);
+        let deviceId = null;
+        let chart1, chart2;
         
-        // Variables globales
-        let deviceID = null;
-        let chartSpO2 = null;
-        let chartTemp = null;
-        let chartFC = null;
-        let dispositivos = [];
-        
-        // Función para obtener lista de dispositivos
-        async function obtenerDispositivos() {
-            try {
-                const dispositivosRef = ref(database, 'mediciones');
-                const snapshot = await get(dispositivosRef);
-                
-                const selector = document.getElementById('selector-dispositivo');
-                
-                if (snapshot.exists()) {
-                    dispositivos = Object.keys(snapshot.val());
-                    
-                    if (dispositivos.length > 0) {
-                        selector.innerHTML = '<option value="">Seleccionar dispositivo</option>';
-                        
-                        dispositivos.forEach(device => {
-                            const option = document.createElement('option');
-                            option.value = device;
-                            // Mostrar nombre amigable
-                            const displayName = device.length > 8 ? 'Baymax_' + device.slice(-8) : 'Baymax_' + device;
-                            option.textContent = displayName + ' (' + new Date().toLocaleDateString() + ')';
-                            selector.appendChild(option);
-                        });
-                        
-                        // Seleccionar el primer dispositivo automáticamente
-                        if (!deviceID && dispositivos.length > 0) {
-                            deviceID = dispositivos[0];
-                            selector.value = deviceID;
-                            console.log("✅ Dispositivo seleccionado automáticamente:", deviceID);
-                            cargarDatos();
-                        }
-                    } else {
-                        selector.innerHTML = '<option value="">No hay dispositivos</option>';
-                        document.getElementById('historial-body').innerHTML = '<tr><td colspan="5" style="text-align: center;">📭 No hay dispositivos registrados. Esperando primera medición del ESP32...</td></tr>';
-                    }
-                } else {
-                    selector.innerHTML = '<option value="">No hay datos</option>';
-                    document.getElementById('historial-body').innerHTML = '<tr><td colspan="5" style="text-align: center;">📭 No hay mediciones aún. Conecta tu ESP32 y coloca el dedo en el sensor.</td></tr>';
+        async function getDevices() {
+            const snap = await get(ref(db, 'mediciones'));
+            const sel = document.getElementById('selector-dispositivo');
+            if (snap.exists()) {
+                let devices = Object.keys(snap.val());
+                sel.innerHTML = '<option value="">Seleccionar</option>';
+                devices.forEach(d => {
+                    let opt = document.createElement('option');
+                    opt.value = d;
+                    opt.textContent = d.slice(-8);
+                    sel.appendChild(opt);
+                });
+                if (devices.length) {
+                    deviceId = devices[0];
+                    sel.value = deviceId;
+                    loadData();
                 }
-            } catch (error) {
-                console.error("❌ Error al obtener dispositivos:", error);
-                document.getElementById('historial-body').innerHTML = '<tr><td colspan="5" style="text-align: center;">❌ Error de conexión con Firebase. Verifica tu conexión a internet.</td></tr>';
             }
         }
         
-        // Función para cargar datos del dispositivo seleccionado
-        function cargarDatos() {
-            if (!deviceID) {
-                console.log("⚠️ No hay dispositivo seleccionado");
-                return;
-            }
-            
-            console.log("📡 Cargando datos del dispositivo:", deviceID);
-            
-            const medicionesRef = query(
-                ref(database, `mediciones/${deviceID}`),
-                orderByKey(),
-                limitToLast(20)
-            );
-            
-            onValue(medicionesRef, (snapshot) => {
-                if (snapshot.exists()) {
-                    const data = snapshot.val();
-                    const medicionesArray = Object.entries(data)
-                        .map(([key, value]) => ({ 
-                            ...value, 
-                            key,
-                            timestamp: value.timestamp || parseInt(key)
-                        }))
-                        .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-                    
-                    console.log(`📊 Cargadas ${medicionesArray.length} mediciones`);
-                    actualizarDashboard(medicionesArray);
-                    
-                    // Mostrar indicador de actualización
-                    const actualizando = document.getElementById('actualizando-texto');
-                    actualizando.style.display = 'block';
-                    setTimeout(() => {
-                        actualizando.style.display = 'none';
-                    }, 800);
-                } else {
-                    console.log("⚠️ No hay mediciones para este dispositivo");
-                    document.getElementById('historial-body').innerHTML = '<tr><td colspan="5" style="text-align: center;">📭 Este dispositivo aún no tiene mediciones. Coloca el dedo en el sensor.</td></tr>';
+        function loadData() {
+            if (!deviceId) return;
+            const q = query(ref(db, `mediciones/${deviceId}`), orderByKey(), limitToLast(20));
+            onValue(q, (snap) => {
+                if (snap.exists()) {
+                    let data = snap.val();
+                    let list = Object.entries(data).map(([k,v]) => ({...v, ts: v.timestamp || parseInt(k)}))
+                        .sort((a,b) => a.ts - b.ts);
+                    updateUI(list);
                 }
-            }, (error) => {
-                console.error("❌ Error al cargar datos:", error);
             });
         }
         
-        // Función para actualizar el dashboard
-        function actualizarDashboard(mediciones) {
-            if (!mediciones || mediciones.length === 0) {
-                return;
-            }
+        function updateUI(list) {
+            if (!list.length) return;
+            let last = list[list.length-1];
+            document.getElementById('spo2').innerText = last.spo2 || '--';
+            document.getElementById('temp').innerText = last.temperatura?.toFixed(1) || '--';
+            document.getElementById('fc').innerText = last.fc || '--';
             
-            const ultima = mediciones[mediciones.length - 1];
+            let s = document.getElementById('estado-spo2');
+            if (last.spo2 >= 95) { s.innerText = '✅ NORMAL'; s.className = 'estado normal'; }
+            else if (last.spo2 >= 90) { s.innerText = '⚠️ ATENCIÓN'; s.className = 'estado atencion'; }
+            else { s.innerText = '🚨 ALERTA'; s.className = 'estado alerta'; }
             
-            // Actualizar valores actuales
-            document.getElementById('ultimo-spo2').textContent = ultima.spo2 || '--';
-            document.getElementById('ultimo-temp').textContent = ultima.temperatura?.toFixed(1) || '--';
-            document.getElementById('ultimo-fc').textContent = ultima.fc || '--';
-            
-            // Estado SpO2
-            const estadoSpO2 = document.getElementById('estado-spo2');
-            if (ultima.spo2 >= 95) {
-                estadoSpO2.textContent = '✅ NORMAL - Niveles óptimos de oxigenación';
-                estadoSpO2.className = 'estado normal';
-            } else if (ultima.spo2 >= 90) {
-                estadoSpO2.textContent = '⚠️ ATENCIÓN - Niveles bajos de oxígeno';
-                estadoSpO2.className = 'estado atencion';
-            } else {
-                estadoSpO2.textContent = '🚨 ALERTA CRÍTICA - Busque atención médica inmediata';
-                estadoSpO2.className = 'estado alerta';
-            }
-            
-            // Estado Temperatura
-            const estadoTemp = document.getElementById('estado-temp');
-            if (ultima.temperatura >= 36.1 && ultima.temperatura <= 37.2) {
-                estadoTemp.textContent = '✅ NORMAL - Temperatura corporal estable';
-                estadoTemp.className = 'estado normal';
-            } else if (ultima.temperatura >= 35.5 && ultima.temperatura <= 37.5) {
-                estadoTemp.textContent = '⚠️ ATENCIÓN - Leve variación de temperatura';
-                estadoTemp.className = 'estado atencion';
-            } else {
-                estadoTemp.textContent = '🚨 ALERTA - Fiebre o hipotermia detectada';
-                estadoTemp.className = 'estado alerta';
-            }
-            
-            // Estado FC
-            const estadoFC = document.getElementById('estado-fc');
-            if (ultima.fc >= 60 && ultima.fc <= 100) {
-                estadoFC.textContent = '✅ NORMAL - Ritmo cardíaco saludable';
-                estadoFC.className = 'estado normal';
-            } else if (ultima.fc > 100) {
-                estadoFC.textContent = '⚠️ TAQUICARDIA - Ritmo cardíaco elevado';
-                estadoFC.className = 'estado atencion';
-            } else if (ultima.fc < 60 && ultima.fc > 0) {
-                estadoFC.textContent = '⚠️ BRADICARDIA - Ritmo cardíaco bajo';
-                estadoFC.className = 'estado atencion';
-            } else {
-                estadoFC.textContent = '⚠️ ATENCIÓN - Fuera de rango normal';
-                estadoFC.className = 'estado atencion';
-            }
-            
-            // Preparar datos para gráficas
-            const fechas = mediciones.map(m => {
-                const fecha = new Date(m.timestamp);
-                return fecha.toLocaleTimeString() + ' ' + fecha.toLocaleDateString();
+            // Usar fecha_hora para las gráficas
+            let labels = list.map(m => {
+                if (m.fecha_hora) {
+                    return m.fecha_hora.substring(5, 16); // Muestra "03-25 15:30"
+                } else {
+                    return new Date(m.ts).toLocaleTimeString();
+                }
             });
             
-            const spo2Values = mediciones.map(m => m.spo2);
-            const tempValues = mediciones.map(m => m.temperatura);
-            const fcValues = mediciones.map(m => m.fc);
+            let spo2s = list.map(m => m.spo2);
+            let temps = list.map(m => m.temperatura);
             
-            // Crear o actualizar gráficas
-            if (!chartSpO2) {
-                crearGraficas(fechas, spo2Values, tempValues, fcValues);
+            if (!chart1) {
+                chart1 = new Chart(document.getElementById('grafica-spo2'), {
+                    type: 'line',
+                    data: { labels: labels, datasets: [{ label: 'SpO2 %', data: spo2s, borderColor: '#4CAF50' }] }
+                });
+                chart2 = new Chart(document.getElementById('grafica-temp'), {
+                    type: 'line',
+                    data: { labels: labels, datasets: [{ label: 'Temp °C', data: temps, borderColor: '#FF9800' }] }
+                });
             } else {
-                chartSpO2.data.labels = fechas;
-                chartSpO2.data.datasets[0].data = spo2Values;
-                chartSpO2.update();
-                
-                chartTemp.data.labels = fechas;
-                chartTemp.data.datasets[0].data = tempValues;
-                chartTemp.update();
-                
-                chartFC.data.labels = fechas;
-                chartFC.data.datasets[0].data = fcValues;
-                chartFC.update();
+                chart1.data.labels = labels;
+                chart1.data.datasets[0].data = spo2s;
+                chart1.update();
+                chart2.data.labels = labels;
+                chart2.data.datasets[0].data = temps;
+                chart2.update();
             }
             
-            // Actualizar tabla
-            const tbody = document.getElementById('historial-body');
+            let tbody = document.getElementById('historial-body');
             tbody.innerHTML = '';
-            
-            mediciones.slice().reverse().forEach(m => {
-                const row = tbody.insertRow();
-                const fecha = new Date(m.timestamp);
-                row.insertCell(0).textContent = fecha.toLocaleString();
-                row.insertCell(1).innerHTML = `<strong style="font-size: 1.1em;">${m.spo2}</strong>%`;
-                row.insertCell(2).innerHTML = `<strong style="font-size: 1.1em;">${m.temperatura?.toFixed(1)}</strong>°C`;
-                row.insertCell(3).innerHTML = `<strong style="font-size: 1.1em;">${m.fc}</strong> BPM`;
-                
-                const estadoCell = row.insertCell(4);
-                if (m.alerta) {
-                    estadoCell.innerHTML = '🚨 ALERTA';
-                    estadoCell.style.color = '#F44336';
-                    estadoCell.style.fontWeight = 'bold';
-                    estadoCell.style.backgroundColor = '#FFEBEE';
+            list.slice().reverse().forEach(m => {
+                let r = tbody.insertRow();
+                // 🔥 USAR fecha_hora si existe
+                if (m.fecha_hora) {
+                    r.insertCell(0).innerText = m.fecha_hora;
                 } else {
-                    estadoCell.innerHTML = '✅ NORMAL';
-                    estadoCell.style.color = '#4CAF50';
-                    estadoCell.style.fontWeight = 'bold';
-                    estadoCell.style.backgroundColor = '#E8F5E9';
+                    r.insertCell(0).innerText = new Date(m.ts).toLocaleString();
                 }
+                r.insertCell(1).innerText = m.spo2 + '%';
+                r.insertCell(2).innerText = (m.temperatura?.toFixed(1)||'--') + '°C';
+                r.insertCell(3).innerText = m.fc + ' BPM';
+                r.insertCell(4).innerHTML = m.alerta ? '🚨 ALERTA' : '✅ NORMAL';
             });
         }
         
-        // Función para crear gráficas
-        function crearGraficas(labels, spo2Data, tempData, fcData) {
-            const ctxSpO2 = document.getElementById('grafica-spo2').getContext('2d');
-            chartSpO2 = new Chart(ctxSpO2, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'SpO2 (%)',
-                        data: spo2Data,
-                        borderColor: '#4CAF50',
-                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                        borderWidth: 3,
-                        tension: 0.4,
-                        fill: true,
-                        pointBackgroundColor: '#4CAF50',
-                        pointBorderColor: '#fff',
-                        pointRadius: 5,
-                        pointHoverRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: { position: 'top' },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `SpO2: ${context.raw}%`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: { min: 70, max: 100, title: { display: true, text: 'SpO2 (%)' } },
-                        x: { title: { display: true, text: 'Hora' } }
-                    }
-                }
-            });
-            
-            const ctxTemp = document.getElementById('grafica-temp').getContext('2d');
-            chartTemp = new Chart(ctxTemp, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Temperatura (°C)',
-                        data: tempData,
-                        borderColor: '#FF9800',
-                        backgroundColor: 'rgba(255, 152, 0, 0.1)',
-                        borderWidth: 3,
-                        tension: 0.4,
-                        fill: true,
-                        pointBackgroundColor: '#FF9800',
-                        pointBorderColor: '#fff',
-                        pointRadius: 5,
-                        pointHoverRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: { position: 'top' },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `Temperatura: ${context.raw}°C`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: { min: 35, max: 38, title: { display: true, text: 'Temperatura (°C)' } },
-                        x: { title: { display: true, text: 'Hora' } }
-                    }
-                }
-            });
-            
-            const ctxFC = document.getElementById('grafica-fc').getContext('2d');
-            chartFC = new Chart(ctxFC, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Frecuencia Cardíaca (BPM)',
-                        data: fcData,
-                        borderColor: '#F44336',
-                        backgroundColor: 'rgba(244, 67, 54, 0.1)',
-                        borderWidth: 3,
-                        tension: 0.4,
-                        fill: true,
-                        pointBackgroundColor: '#F44336',
-                        pointBorderColor: '#fff',
-                        pointRadius: 5,
-                        pointHoverRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: { position: 'top' },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `FC: ${context.raw} BPM`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: { min: 40, max: 180, title: { display: true, text: 'Frecuencia Cardíaca (BPM)' } },
-                        x: { title: { display: true, text: 'Hora' } }
-                    }
-                }
-            });
-        }
+        document.getElementById('selector-dispositivo').onchange = (e) => {
+            deviceId = e.target.value;
+            if (deviceId) loadData();
+        };
+        document.getElementById('btn-refrescar').onclick = () => { if (deviceId) loadData(); else getDevices(); };
         
-        // Eventos
-        document.getElementById('selector-dispositivo').addEventListener('change', (e) => {
-            deviceID = e.target.value;
-            if (deviceID) {
-                console.log("📱 Dispositivo seleccionado manualmente:", deviceID);
-                cargarDatos();
-            }
-        });
-        
-        document.getElementById('btn-refrescar').addEventListener('click', () => {
-            if (deviceID) {
-                cargarDatos();
-            } else {
-                obtenerDispositivos();
-            }
-        });
-        
-        // Inicializar
-        async function init() {
-            await obtenerDispositivos();
-            
-            // Ocultar loading y mostrar dashboard
+        getDevices().then(() => {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('dashboard').style.display = 'block';
-            
-            // Actualizar cada 10 segundos
-            setInterval(() => {
-                if (deviceID) {
-                    cargarDatos();
-                }
-            }, 10000);
-        }
-        
-        init();
+            setInterval(() => { if (deviceId) loadData(); }, 10000);
+        });
     </script>
 </body>
 </html>
