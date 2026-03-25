@@ -436,13 +436,6 @@
         let chartTemp = null;
         let chartFC = null;
         
-        // Función para formatear fecha_hora
-        function formatearFecha(fechaHoraStr) {
-            if (!fechaHoraStr) return null;
-            // Si ya viene en formato "2026-03-25 15:30:45", lo mostramos así
-            return fechaHoraStr;
-        }
-        
         // Función para obtener lista de dispositivos
         async function obtenerDispositivos() {
             try {
@@ -461,7 +454,7 @@
                             const option = document.createElement('option');
                             option.value = device;
                             const displayName = device.length > 8 ? 'Baymax_' + device.slice(-8) : 'Baymax_' + device;
-                            option.textContent = displayName;
+                            option.textContent = displayName + ' (' + new Date().toLocaleDateString() + ')';
                             selector.appendChild(option);
                         });
                         
@@ -477,7 +470,7 @@
                     }
                 } else {
                     selector.innerHTML = '<option value="">No hay datos</option>';
-                    document.getElementById('historial-body').innerHTML = '<tr><td colspan="5" style="text-align: center;">📭 No hay mediciones aún. Conecta tu ESP32...</td></tr>';
+                    document.getElementById('historial-body').innerHTML = '<tr><td colspan="5" style="text-align: center;">📭 No hay mediciones aún. Conecta tu ESP32 y coloca el dedo en el sensor.</td></tr>';
                 }
             } catch (error) {
                 console.error("❌ Error:", error);
@@ -516,7 +509,7 @@
                         actualizando.style.display = 'none';
                     }, 800);
                 } else {
-                    document.getElementById('historial-body').innerHTML = '<tr><td colspan="5" style="text-align: center;">📭 Este dispositivo aún no tiene mediciones.</td></tr>';
+                    document.getElementById('historial-body').innerHTML = '<tr><td colspan="5" style="text-align: center;">📭 Este dispositivo aún no tiene mediciones. Coloca el dedo en el sensor.</td></tr>';
                 }
             });
         }
@@ -535,46 +528,52 @@
             // Estado SpO2
             const estadoSpO2 = document.getElementById('estado-spo2');
             if (ultima.spo2 >= 95) {
-                estadoSpO2.textContent = '✅ NORMAL - Niveles óptimos';
+                estadoSpO2.textContent = '✅ NORMAL - Niveles óptimos de oxigenación';
                 estadoSpO2.className = 'estado normal';
             } else if (ultima.spo2 >= 90) {
-                estadoSpO2.textContent = '⚠️ ATENCIÓN - Niveles bajos';
+                estadoSpO2.textContent = '⚠️ ATENCIÓN - Niveles bajos de oxígeno';
                 estadoSpO2.className = 'estado atencion';
             } else {
-                estadoSpO2.textContent = '🚨 ALERTA CRÍTICA';
+                estadoSpO2.textContent = '🚨 ALERTA CRÍTICA - Busque atención médica inmediata';
                 estadoSpO2.className = 'estado alerta';
             }
             
             // Estado Temperatura
             const estadoTemp = document.getElementById('estado-temp');
             if (ultima.temperatura >= 36.1 && ultima.temperatura <= 37.2) {
-                estadoTemp.textContent = '✅ NORMAL';
+                estadoTemp.textContent = '✅ NORMAL - Temperatura corporal estable';
                 estadoTemp.className = 'estado normal';
             } else if (ultima.temperatura >= 35.5 && ultima.temperatura <= 37.5) {
-                estadoTemp.textContent = '⚠️ ATENCIÓN';
+                estadoTemp.textContent = '⚠️ ATENCIÓN - Leve variación de temperatura';
                 estadoTemp.className = 'estado atencion';
             } else {
-                estadoTemp.textContent = '🚨 ALERTA';
+                estadoTemp.textContent = '🚨 ALERTA - Fiebre o hipotermia detectada';
                 estadoTemp.className = 'estado alerta';
             }
             
             // Estado FC
             const estadoFC = document.getElementById('estado-fc');
             if (ultima.fc >= 60 && ultima.fc <= 100) {
-                estadoFC.textContent = '✅ NORMAL';
+                estadoFC.textContent = '✅ NORMAL - Ritmo cardíaco saludable';
                 estadoFC.className = 'estado normal';
+            } else if (ultima.fc > 100) {
+                estadoFC.textContent = '⚠️ TAQUICARDIA - Ritmo cardíaco elevado';
+                estadoFC.className = 'estado atencion';
+            } else if (ultima.fc < 60 && ultima.fc > 0) {
+                estadoFC.textContent = '⚠️ BRADICARDIA - Ritmo cardíaco bajo';
+                estadoFC.className = 'estado atencion';
             } else {
-                estadoFC.textContent = '⚠️ ATENCIÓN';
+                estadoFC.textContent = '⚠️ ATENCIÓN - Fuera de rango normal';
                 estadoFC.className = 'estado atencion';
             }
             
-            // 🔥 USAR fecha_hora PARA LAS GRÁFICAS
+            // 🔥 CAMBIO 1: Preparar fechas usando fecha_hora si existe
             const fechas = mediciones.map(m => {
                 if (m.fecha_hora) {
-                    // Mostrar solo hora y fecha corta
-                    return m.fecha_hora.substring(5, 16); // "03-25 15:30"
+                    return m.fecha_hora.substring(5, 16); // Muestra "03-25 15:30"
                 } else {
-                    return new Date(m.timestamp).toLocaleTimeString();
+                    const fecha = new Date(m.timestamp);
+                    return fecha.toLocaleTimeString() + ' ' + fecha.toLocaleDateString();
                 }
             });
             
@@ -599,33 +598,35 @@
                 chartFC.update();
             }
             
-            // 🔥 ACTUALIZAR TABLA CON fecha_hora
+            // 🔥 CAMBIO 2: Actualizar tabla con fecha_hora si existe
             const tbody = document.getElementById('historial-body');
             tbody.innerHTML = '';
             
             mediciones.slice().reverse().forEach(m => {
                 const row = tbody.insertRow();
                 
-                // Mostrar fecha_hora si existe, si no usar timestamp
                 if (m.fecha_hora) {
                     row.insertCell(0).textContent = m.fecha_hora;
                 } else {
-                    row.insertCell(0).textContent = new Date(m.timestamp).toLocaleString();
+                    const fecha = new Date(m.timestamp);
+                    row.insertCell(0).textContent = fecha.toLocaleString();
                 }
                 
-                row.insertCell(1).innerHTML = `<strong>${m.spo2}</strong>%`;
-                row.insertCell(2).innerHTML = `<strong>${m.temperatura?.toFixed(1)}</strong>°C`;
-                row.insertCell(3).innerHTML = `<strong>${m.fc}</strong> BPM`;
+                row.insertCell(1).innerHTML = `<strong style="font-size: 1.1em;">${m.spo2}</strong>%`;
+                row.insertCell(2).innerHTML = `<strong style="font-size: 1.1em;">${m.temperatura?.toFixed(1)}</strong>°C`;
+                row.insertCell(3).innerHTML = `<strong style="font-size: 1.1em;">${m.fc}</strong> BPM`;
                 
                 const estadoCell = row.insertCell(4);
                 if (m.alerta) {
                     estadoCell.innerHTML = '🚨 ALERTA';
                     estadoCell.style.color = '#F44336';
                     estadoCell.style.fontWeight = 'bold';
+                    estadoCell.style.backgroundColor = '#FFEBEE';
                 } else {
                     estadoCell.innerHTML = '✅ NORMAL';
                     estadoCell.style.color = '#4CAF50';
                     estadoCell.style.fontWeight = 'bold';
+                    estadoCell.style.backgroundColor = '#E8F5E9';
                 }
             });
         }
@@ -666,7 +667,7 @@
                     },
                     scales: {
                         y: { min: 70, max: 100, title: { display: true, text: 'SpO2 (%)' } },
-                        x: { title: { display: true, text: 'Fecha/Hora' } }
+                        x: { title: { display: true, text: 'Hora' } }
                     }
                 }
             });
@@ -705,7 +706,7 @@
                     },
                     scales: {
                         y: { min: 35, max: 38, title: { display: true, text: 'Temperatura (°C)' } },
-                        x: { title: { display: true, text: 'Fecha/Hora' } }
+                        x: { title: { display: true, text: 'Hora' } }
                     }
                 }
             });
@@ -744,7 +745,7 @@
                     },
                     scales: {
                         y: { min: 40, max: 180, title: { display: true, text: 'Frecuencia Cardíaca (BPM)' } },
-                        x: { title: { display: true, text: 'Fecha/Hora' } }
+                        x: { title: { display: true, text: 'Hora' } }
                     }
                 }
             });
@@ -753,17 +754,12 @@
         // Eventos
         document.getElementById('selector-dispositivo').addEventListener('change', (e) => {
             deviceID = e.target.value;
-            if (deviceID) {
-                cargarDatos();
-            }
+            if (deviceID) cargarDatos();
         });
         
         document.getElementById('btn-refrescar').addEventListener('click', () => {
-            if (deviceID) {
-                cargarDatos();
-            } else {
-                obtenerDispositivos();
-            }
+            if (deviceID) cargarDatos();
+            else obtenerDispositivos();
         });
         
         // Inicializar
